@@ -1,17 +1,54 @@
-version: '3.8'
 services:
   postgres:
     image: postgres:16
     container_name: profils-postgres
     environment:
-      POSTGRES_DB: profilsdb
-      POSTGRES_USER: springuser
-      POSTGRES_PASSWORD: springpass
+      POSTGRES_DB: dbProfil
+      POSTGRES_USER: profiluser
+      POSTGRES_PASSWORD: profilpass
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U profiluser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: bitnami/kafka:3.9
+    container_name: profils-kafka
+    environment:
+      # KRaft (sans ZooKeeper)
+      - KAFKA_ENABLE_KRAFT=yes
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    ports:
+      - "29092:29092"   # accès depuis ta machine (app locale)
+    volumes:
+      - kafka_data:/bitnami/kafka
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    container_name: profils-kafdrop
+    ports:
+      - "9000:9000"
+    environment:
+      - KAFKA_BROKERCONNECT=kafka:9092
+    depends_on:
+      - kafka
 
 volumes:
   postgres_data:
-
+  kafka_data:
