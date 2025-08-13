@@ -1,0 +1,61 @@
+name: CI - Gestion des profils (Main)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    name: Lint Java (Checkstyle)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - name: Run Maven Checkstyle
+        run: mvn -B checkstyle:check
+
+  test:
+    name: Build & Test with PostgreSQL
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: dbProfil
+          POSTGRES_USER: profiluser
+          POSTGRES_PASSWORD: profilpass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U profiluser"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - name: Wait for PostgreSQL
+        run: |
+          echo "Waiting for PostgreSQL..."
+          until pg_isready -h localhost -p 5432 -U profiluser; do sleep 5; done
+      - name: Run Maven tests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/dbProfil
+          SPRING_DATASOURCE_USERNAME: profiluser
+          SPRING_DATASOURCE_PASSWORD: profilpass
+        run: mvn -B test
