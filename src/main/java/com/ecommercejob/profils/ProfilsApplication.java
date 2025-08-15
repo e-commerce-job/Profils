@@ -10,6 +10,7 @@ public class ProfilsApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(ProfilsApplication.class, args);
+        System.out.println("Test");
 	}
 
 }
