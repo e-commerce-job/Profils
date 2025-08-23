@@ -30,9 +30,9 @@ public class ProfileService {
     public ProfileResponse update(UUID userId, ProfileUpdateRequest req) {
         Profile p = repo.findById(userId).orElseThrow(() ->
                 new NotFoundException("Profil introuvable: " + userId));
-        if (req.photoUrl != null) p.setPhotoUrl(req.photoUrl);
-        if (req.phone != null) p.setPhone(req.phone);
-        if (req.bio != null) p.setBio(req.bio);
+        if (req.photoUrl() != null) p.setPhotoUrl(req.photoUrl());
+        if (req.phone() != null) p.setPhone(req.phone());
+        if (req.bio() != null) p.setBio(req.bio());
         return toResponse(repo.save(p));
     }
 

@@ -11,6 +11,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/profiles")
+@CrossOrigin(origins = "http://localhost:4200") // Angular dev
 public class ProfilesController {
 
     private final ProfileService service;
